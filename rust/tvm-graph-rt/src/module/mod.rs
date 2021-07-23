@@ -17,48 +17,77 @@
  * under the License.
  */
 
-#[cfg(not(any(target_arch = "wasm32", target_env = "sgx")))]
-mod dso;
-mod syslib;
+ #[cfg(not(any(target_arch = "wasm32", target_env = "sgx")))]
+ mod dso;
+ mod syslib;
+ 
+ use std::{os::raw::{c_int, c_void}, ptr};
+ 
+ pub type BackendPackedCFuncMod = extern "C" fn(
+     args: *const TVMValue,
+     type_codes: *const c_int,
+     num_args: c_int,
+     out_ret_value: *mut TVMValue,
+     out_ret_tcode: *mut u32,
+     additional: c_int,
+     
+ ) -> c_int;
+ 
+ use tvm_sys::{
+     ffi::BackendPackedCFunc,
+     packed_func::{ArgValue, PackedFunc, RetValue, TVMValue},
+ };
+ 
+ #[cfg(not(any(target_arch = "wasm32", target_env = "sgx")))]
+ pub use dso::DsoModule;
+ pub use syslib::SystemLibModule;
+ 
+ pub trait Module {
+     fn get_function<S: AsRef<str>>(&self, name: S) -> Option<&(dyn PackedFunc)>;
+ }
+ 
+ // @see `WrapPackedFunc` in `llvm_module.cc`.
+ fn wrap_backend_packed_func(func_name: String, func: BackendPackedCFunc) -> Box<dyn PackedFunc> {
+     Box::new(move |args: &[ArgValue]| {
+         let (values, type_codes): (Vec<TVMValue>, Vec<i32>) = args
+             .iter()
+             .map(|arg| {
+                 let (val, code) = arg.to_tvm_value();
+                 (val, code as i32)
+             })
+             .unzip();
+         let ret: RetValue = RetValue::default();
+         let (mut ret_val, mut ret_type_code) = ret.to_tvm_value();
+         
+        //  let func_mod: BackendPackedCFuncMod = unsafe {std::mem::transmute(func)};
+ 
+        //  let exit_code = func_mod(
+        //      values.as_ptr(),
+        //      type_codes.as_ptr(),
+        //      values.len() as i32,
+        //      &mut ret_val,
+        //      &mut ret_type_code,
+        //      0,
+        //  );
 
-use tvm_sys::{
-    ffi::BackendPackedCFunc,
-    packed_func::{ArgValue, PackedFunc, RetValue, TVMValue},
-};
-
-#[cfg(not(any(target_arch = "wasm32", target_env = "sgx")))]
-pub use dso::DsoModule;
-pub use syslib::SystemLibModule;
-
-pub trait Module {
-    fn get_function<S: AsRef<str>>(&self, name: S) -> Option<&(dyn PackedFunc)>;
-}
-
-// @see `WrapPackedFunc` in `llvm_module.cc`.
-fn wrap_backend_packed_func(func_name: String, func: BackendPackedCFunc) -> Box<dyn PackedFunc> {
-    Box::new(move |args: &[ArgValue]| {
-        let (values, type_codes): (Vec<TVMValue>, Vec<i32>) = args
-            .iter()
-            .map(|arg| {
-                let (val, code) = arg.to_tvm_value();
-                (val, code as i32)
-            })
-            .unzip();
-        let ret: RetValue = RetValue::default();
-        let (mut ret_val, mut ret_type_code) = ret.to_tvm_value();
-        let exit_code = func(
+         let exit_code = func(
             values.as_ptr(),
             type_codes.as_ptr(),
             values.len() as i32,
             &mut ret_val,
             &mut ret_type_code,
+            std::ptr::null_mut(),
         );
-        if exit_code == 0 {
-            Ok(RetValue::from_tvm_value(ret_val, ret_type_code))
-        } else {
-            Err(tvm_sys::errors::FuncCallError::get_with_context(
-                func_name.clone(),
-            ))
-        }
-    })
-}
+
+ 
+ 
+         if exit_code == 0 {
+             Ok(RetValue::from_tvm_value(ret_val, ret_type_code))
+         } else {
+             Err(tvm_sys::errors::FuncCallError::get_with_context(
+                 func_name.clone(),
+             ))
+         }
+     })
+ }
+ 

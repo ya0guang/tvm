@@ -33,9 +33,11 @@ def main():
     s = tvm.te.create_schedule(C.op)
     s[C].parallel(s[C].op.axis[0])
     print(tvm.lower(s, [A, B, C], simple_mode=True))
-    tvm.build(s, [A, B, C], "llvm -mtriple=wasm32-unknown-unknown --system-lib").save(
+    module = tvm.build(s, [A, B, C], "llvm -mtriple=wasm32-unknown-unknown --system-lib")
+    module.save(
         osp.join(sys.argv[1], "test.o")
     )
+    # print(module.get_source()[:])
 
 
 if __name__ == "__main__":
