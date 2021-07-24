@@ -84,22 +84,22 @@ fn main() -> Result<()> {
     println!("cargo:rerun-if-changed={}", build_path.display());
     println!("cargo:rerun-if-changed={}/include", source_path.display());
 
-    if cfg!(feature = "static-linking") {
-        println!("cargo:rustc-link-lib=static=tvm");
-        // TODO(@jroesch): move this to tvm-build as library_path?
-        println!(
-            "cargo:rustc-link-search=native={}/build",
-            build_path.display()
-        );
-    }
+    // if cfg!(feature = "static-linking") {
+    //     println!("cargo:rustc-link-lib=static=tvm");
+    //     // TODO(@jroesch): move this to tvm-build as library_path?
+    //     println!(
+    //         "cargo:rustc-link-search=native={}/build",
+    //         build_path.display()
+    //     );
+    // }
 
-    if cfg!(feature = "dynamic-linking") {
-        println!("cargo:rustc-link-lib=dylib=tvm");
-        println!(
-            "cargo:rustc-link-search=native={}/build",
-            build_path.display()
-        );
-    }
+    // if cfg!(feature = "dynamic-linking") {
+    //     println!("cargo:rustc-link-lib=dylib=tvm");
+    //     println!(
+    //         "cargo:rustc-link-search=native={}/build",
+    //         build_path.display()
+    //     );
+    // }
 
     let runtime_api = source_path.join("include/tvm/runtime/c_runtime_api.h");
     let backend_api = source_path.join("include/tvm/runtime/c_backend_api.h");
