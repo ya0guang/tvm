@@ -19,8 +19,6 @@
 
 use anyhow::Result;
 use wasmtime::*;
-use wasmtime_wasi::sync::WasiCtxBuilder;
-use wasmtime_wasi::WasiCtx;
 
 use super::Tensor;
 
