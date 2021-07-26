@@ -64,7 +64,6 @@ impl GraphExecutor {
          let engine = Engine::new(Config::new().wasm_simd(true)).unwrap();
          // First set up our linker which is going to be linking modules together. We
          // want our linker to have wasi available, so we set that up here as well.
-         // let mut linker = Linker::new(&store);
          let mut linker = Linker::new(&engine);
          wasmtime_wasi::add_to_linker(&mut linker, |s| s)?;
          // Create an instance of `Wasi` which contains a `WasiCtx`. Note that
@@ -74,9 +73,7 @@ impl GraphExecutor {
              .inherit_stdio()
              .inherit_args()?
              .build();
-        //  let wasi = Wasi::new(&store, WasiCtx::new(std::env::args())?);
          let mut store = Store::new(&engine, wasi);
-         // wasi.add_to_linker(&mut linker)?;
 
          let module = Module::from_file(&engine, &wasm_graph_file)?;
          self.instance = Some(linker.instantiate(&mut store, &module)?);
@@ -107,11 +104,6 @@ impl GraphExecutor {
 
         self.wasm_addr = wasm_addr as i32;
         self.input_size = in_size as i32;
-
-        // let mem_ptr = memory.data_ptr(self.store.as_mut().unwrap());
-        // let bug_region = unsafe {
-        //     std::slice::from_raw_parts(((mem_ptr as usize) + wasm_addr + 95000) as *mut u8, 10)
-        // };
 
         Ok(())
     }
@@ -150,10 +142,6 @@ impl GraphExecutor {
             self.wasm_addr as _,
             &mut out_data,
         )?;
-
-        // let out_data = unsafe {
-        //     &memory.data_unchecked()[self.wasm_addr as usize..][..self.output_size as usize]
-        // };
 
         let out_vec: Tensor = serde_json::from_slice(&out_data).unwrap();
         Ok(out_vec)
