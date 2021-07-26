@@ -28,20 +28,6 @@
  
      let data_vec = unsafe { std::slice::from_raw_parts(in_addr, in_size) };
  
-     // let mut data_vec = Vec::new();
-     // for i in 0..in_size {
-     //     data_vec.push(ptr::read(in_addr.offset(i as isize)));
-     // }
-     // println!("DEBUG: VOID");
- 
-     // data_vec[95004] = 44;
-     // data_vec[95005] = 49;
-     // data_vec[95006] = 54;
-     // data_vec[95007] = 55;
-     println!(
-         "DEBUG: wasm_graph load_input data_vec: {:?}",
-         &data_vec[95000..95010]
-     );
      let input = serde_json::from_slice(&data_vec);
      match input {
          Ok(result) => {

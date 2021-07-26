@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-"""Builds a simple graph for testing."""
+"""Builds a simple resnet50 graph for testing."""
 import argparse
 import os
 import subprocess
@@ -32,7 +32,7 @@ from PIL import Image
 import numpy as np
 import tvm.relay as relay
 
-
+# This example uses resnet50-v2-7 model
 model_url = "".join(
     [
         "https://github.com/onnx/models/raw/",
@@ -41,21 +41,13 @@ model_url = "".join(
     ]
 )
 
-def _get_mod_and_params(model_file):
-    onnx_model = onnx.load(model_file)
-    shape_dict = {}
-    for input in onnx_model.graph.input:
-        shape_dict[input.name] = [dim.dim_value for dim in input.type.tensor_type.shape.dim]
-
-    return relay.frontend.from_onnx(onnx_model, shape_dict)
-
-
 def build_graph_lib(opt_level):
     """Compiles the pre-trained model with TVM"""
     out_dir = os.path.join(sys.path[0], "../lib")
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
 
+    # Follow the tutorial to download and compile the model
     model_path = download_testdata(model_url, "resnet50-v2-7.onnx", module="onnx")
     onnx_model = onnx.load(model_path)
 
@@ -84,32 +76,24 @@ def build_graph_lib(opt_level):
     # target = "llvm -mtriple=wasm32-unknown-unknown -mattr=+simd128 --system-lib"
     target = "llvm -mtriple=wasm32-unknown-unknown --system-lib"
 
+
     with tvm.transform.PassContext(opt_level=opt_level):
         factory = relay.build(mod, target=target, params=params)
 
+    # Save the model artifacts to obj_file
     obj_file = os.path.join(out_dir, "graph.o")
     factory.get_lib().save(obj_file)
 
+    # Run llvm-ar to archive obj_file into lib_file
     lib_file = os.path.join(out_dir, "libgraph_wasm32.a")
     cmds = [os.environ.get("LLVM_AR", "llvm-ar-10"), "rcs", lib_file, obj_file]
     subprocess.run(cmds)
 
-
+    # Save the json and params
     with open(os.path.join(out_dir, "graph.json"), "w") as f_graph:
         f_graph.write(factory.get_graph_json())
     with open(os.path.join(out_dir, "graph.params"), "wb") as f_params:
         f_params.write(runtime.save_param_dict(factory.get_params()))
-    # factory.get_params().save(os.path.join(out_dir, "graph.params"))
-
-    # Save the model artifacts to obj_file
-    # lib_raw.save(obj_file)
-    # # Run llvm-ar to archive obj_file into lib_file
-
-
-
-
-
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="ONNX model build example")

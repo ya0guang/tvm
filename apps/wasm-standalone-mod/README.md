@@ -116,16 +116,10 @@ This project should be considered **experimental** at the very early stage, all 
 
 - Build DL library in the WebAssembly format.
 
-  - Download model
+  - Compile the model
 
     ```
-    cd wasm-graph/tools && wget https://s3.amazonaws.com/onnx-model-zoo/resnet/resnet50v1/resnet50v1.onnx
-    ```
-
-  - Compile
-
-    ```
-    LLVM_AR=llvm-ar-10 python ./build_graph_lib.py -O3 ./resnet50v1.onnx
+    cd wasm-graph/tools && LLVM_AR=llvm-ar-10 python ./build_graph_lib.py -O3
     ```
 
 ### Build wasm-graph package

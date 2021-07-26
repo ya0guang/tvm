@@ -19,6 +19,7 @@
 
 use anyhow::Result;
 use wasmtime::*;
+use wasmtime_wasi::{WasiCtx, WasiCtxBuilder};
 
 use super::Tensor;
 
@@ -26,8 +27,9 @@ pub struct GraphExecutor {
     pub(crate) wasm_addr: i32,
     pub(crate) input_size: i32,
     pub(crate) output_size: i32,
-    // pub(crate) store: Option<Store<WasiCtx>>,
-    pub(crate) store: Option<Store<()>>,
+    pub(crate) store: Option<Store<WasiCtx>>,
+    // None-WASI version:
+    // pub(crate) store: Option<Store<()>>,
     pub(crate) instance: Option<Instance>,
 }
 
@@ -44,64 +46,43 @@ impl GraphExecutor {
     }
 
     pub fn instantiate(&mut self, wasm_graph_file: String) -> Result<()> {
-        // ---------------------------------------------- wasi
-        // //  let engine = Engine::new(Config::new().wasm_simd(true)).unwrap();
-        //  let engine = Engine::default();
-        //  // let store = Store::new(&engine);
+        // It seems WASI in this example is not necessary
 
-        //  // First set up our linker which is going to be linking modules together. We
-        //  // want our linker to have wasi available, so we set that up here as well.
-        //  // let mut linker = Linker::new(&store);
-        //  let mut linker = Linker::new(&engine);
-        //  wasmtime_wasi::add_to_linker(&mut linker, |s| s)?;
-        //  // Create an instance of `Wasi` which contains a `WasiCtx`. Note that
-        //  // `WasiCtx` provides a number of ways to configure what the target program
-        //  // will have access to.
-        //  let wasi = WasiCtxBuilder::new()
-        //      .inherit_stdio()
-        //      .inherit_args()?
-        //      .build();
-        //  // let wasi = Wasi::new(&store, WasiCtx::new(std::env::args())?);
-        //  let mut store = Store::new(&engine, wasi);
-        //  // wasi.add_to_linker(&mut linker)?;
+        // None WASI version: works with no SIMD
+        // let engine = Engine::new(Config::new().wasm_simd(true)).unwrap();
+        // let mut store = Store::new(&engine, ());
+        // let module = Module::from_file(store.engine(), &wasm_graph_file)?;
 
-        //  let module = Module::from_file(&engine, &wasm_graph_file)?;
-        //  self.instance = Some(linker.instantiate(&mut store, &module)?);
-        //  self.store = Some(store);
+        // let instance = Instance::new(&mut store, &module, &[])?;
 
-        // -------------------------------------------- /wasi
+        // self.instance = Some(instance);
+        // self.store = Some(store);
 
-        // without wasi
+        // Ok(())
 
-        //  let engine = Engine::new(Config::new().wasm_simd(true)).unwrap();
-        let mut store = Store::<()>::default();
-        let module = Module::from_file(
-            store.engine(),
-            &wasm_graph_file,
-        )?;
+        // WASI version:
+         let engine = Engine::new(Config::new().wasm_simd(true)).unwrap();
+         // First set up our linker which is going to be linking modules together. We
+         // want our linker to have wasi available, so we set that up here as well.
+         // let mut linker = Linker::new(&store);
+         let mut linker = Linker::new(&engine);
+         wasmtime_wasi::add_to_linker(&mut linker, |s| s)?;
+         // Create an instance of `Wasi` which contains a `WasiCtx`. Note that
+         // `WasiCtx` provides a number of ways to configure what the target program
+         // will have access to.
+         let wasi = WasiCtxBuilder::new()
+             .inherit_stdio()
+             .inherit_args()?
+             .build();
+        //  let wasi = Wasi::new(&store, WasiCtx::new(std::env::args())?);
+         let mut store = Store::new(&engine, wasi);
+         // wasi.add_to_linker(&mut linker)?;
 
-        let instance = Instance::new(&mut store, &module, &[])?;
-    
-        // First set up our linker which is going to be linking modules together. We
-        // want our linker to have wasi available, so we set that up here as well.
-        // let mut linker = Linker::new(&store);
-        // let mut linker = Linker::new(&engine);
-        // wasmtime_wasi::add_to_linker(&mut linker, |s| s)?;
-        // Create an instance of `Wasi` which contains a `WasiCtx`. Note that
-        // `WasiCtx` provides a number of ways to configure what the target program
-        // will have access to.
-        // let wasi = WasiCtxBuilder::new()
-        //     .inherit_stdio()
-        //     .inherit_args()?
-        //     .build();
-        // let wasi = Wasi::new(&store, WasiCtx::new(std::env::args())?);
-        // let mut store = Store::new(&engine, wasi);
-        // wasi.add_to_linker(&mut linker)?;
+         let module = Module::from_file(&engine, &wasm_graph_file)?;
+         self.instance = Some(linker.instantiate(&mut store, &module)?);
+         self.store = Some(store);
 
-        self.instance = Some(instance);
-        self.store = Some(store);
-
-        Ok(())
+        Ok(())  
     }
 
     pub fn set_input(&mut self, input_data: Tensor) -> Result<()> {
@@ -114,37 +95,23 @@ impl GraphExecutor {
 
         // Specify the wasm address to access the wasm memory.
         let wasm_addr = memory.data_size(self.store.as_mut().unwrap());
-        println!("DEBUG: data_size before grow: {:?}", wasm_addr);
+
         // Serialize the data into a JSON string.
         let in_data = serde_json::to_vec(&input_data)?;
         let in_size = in_data.len();
+
         // Grow up memory size according to in_size to avoid memory leak.
         memory.grow(self.store.as_mut().unwrap(), (in_size >> 16) as u32 + 1)?;
-        println!(
-            "DEBUG: data_size after grow: {:?}",
-            memory.data_size(self.store.as_mut().unwrap())
-        );
 
-        // Insert the input data into wasm memory.
-        // for i in 0..in_size {
-        //     unsafe {
-        //         memory.data_unchecked_mut()[wasm_addr + i] = *in_data.get(i).unwrap();
-        //     }
-        // }
         memory.write(self.store.as_mut().unwrap(), wasm_addr, &in_data)?;
 
         self.wasm_addr = wasm_addr as i32;
         self.input_size = in_size as i32;
-        println!(
-            "DEBUG, input addr: {:?}, size: {:?}",
-            self.wasm_addr, self.input_size
-        );
 
-        let mem_ptr = memory.data_ptr(self.store.as_mut().unwrap());
-        let bug_region = unsafe {
-            std::slice::from_raw_parts(((mem_ptr as usize) + wasm_addr + 95000) as *mut u8, 10)
-        };
-        println!("DEBUG: after set_input {:?}", bug_region);
+        // let mem_ptr = memory.data_ptr(self.store.as_mut().unwrap());
+        // let bug_region = unsafe {
+        //     std::slice::from_raw_parts(((mem_ptr as usize) + wasm_addr + 95000) as *mut u8, 10)
+        // };
 
         Ok(())
     }
@@ -157,24 +124,6 @@ impl GraphExecutor {
             .unwrap()
             .get_func(self.store.as_mut().unwrap(), "run")
             .ok_or_else(|| anyhow::format_err!("failed to find `run` function export!"))?;
-        // .wrap2_async::<i32, i32, i32>(self.store.unwrap())?;
-        // .get2::<i32, i32, i32>()?;
-
-        // DEBUG
-        let memory = self
-            .instance
-            .as_ref()
-            .unwrap()
-            .get_memory(self.store.as_mut().unwrap(), "memory")
-            .ok_or_else(|| anyhow::format_err!("failed to find `memory` export"))?;
-        let mem_ptr = memory.data_ptr(self.store.as_mut().unwrap());
-        let bug_region = unsafe {
-            std::slice::from_raw_parts(
-                ((mem_ptr as usize) + (self.wasm_addr as usize) + 95000) as *mut u8,
-                10,
-            )
-        };
-        println!("DEBUG: in run {:?}", bug_region);
 
         let params = [Val::I32(self.wasm_addr), Val::I32(self.input_size)];
         let out_size = run.call(self.store.as_mut().unwrap(), &params[..])?;
