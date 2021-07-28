@@ -38,15 +38,13 @@ use types::Tensor;
 use std::fs::File;
 
 #[no_mangle]
-pub fn entrypoint(){
+pub fn entrypoint() {
     unsafe {
         __wasm_call_ctors();
     }
 
-
     let rv = run();
     println!("DEBUG: RV: {:?}", rv);
-
 }
 
 extern "C" {
@@ -96,7 +94,9 @@ pub extern "C" fn run() -> i32 {
 
     executor.set_input("data", input);
 
+    // println!("DEBUG: Before executor.run();");
     executor.run();
+    // println!("After: Before executor.run();");
 
     let output = executor.get_output(0).unwrap().as_dltensor(false);
 

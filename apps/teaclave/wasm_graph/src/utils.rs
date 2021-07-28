@@ -103,15 +103,3 @@ fn data_preprocess(img: image::DynamicImage) -> Tensor {
 
     Tensor::from(arr)
 }
-
-// pub unsafe fn store_output(out_addr: i32, output: Tensor) -> usize {
-//     let out_addr = out_addr as *mut u8;
-
-//     let data_vec = serde_json::to_vec(&output).unwrap();
-//     let data_size = data_vec.len();
-//     for i in 0..data_size {
-//         ptr::write(out_addr.offset(i as isize), *data_vec.get(i).unwrap());
-//     }
-
-//     data_size
-// }
