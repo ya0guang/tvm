@@ -44,7 +44,7 @@ model_url = "".join(
 
 def build_graph_lib(opt_level):
     """Compiles the pre-trained model with TVM"""
-    out_dir = os.path.join(sys.path[0], "../lib")
+    out_dir = os.path.join(sys.path[0], "../outlib")
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
 

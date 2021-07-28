@@ -19,8 +19,8 @@
 
 #[macro_use]
 extern crate lazy_static;
-#[macro_use]
-extern crate serde_derive;
+// #[macro_use]
+// extern crate serde_derive;
 
 mod types;
 pub mod utils;
@@ -38,13 +38,15 @@ use types::Tensor;
 use std::fs::File;
 
 #[no_mangle]
-fn entrypoint() {
-    let input_filename = "./test.txt";
-    println!("Reading from {}", input_filename);
+pub fn entrypoint(){
+    unsafe {
+        __wasm_call_ctors();
+    }
 
-    let f = File::open(input_filename).unwrap();
 
-    let tensor = unsafe {utils::load_input(0, 0)};
+    let rv = run();
+    println!("DEBUG: RV: {:?}", rv);
+
 }
 
 extern "C" {
@@ -82,8 +84,11 @@ lazy_static! {
 }
 
 #[no_mangle]
-pub extern "C" fn run(wasm_addr: i32, in_size: i32) -> i32 {
-    let in_tensor = unsafe { utils::load_input(wasm_addr, in_size as usize) };
+pub extern "C" fn run() -> i32 {
+    let input_filename = String::from("cat.png");
+    let tag_file = String::from("synset.csv");
+
+    let in_tensor = utils::load_input(input_filename);
     let input: TVMTensor = in_tensor.as_dltensor().into();
 
     // since this executor is not multi-threaded, we can acquire lock once
@@ -96,9 +101,6 @@ pub extern "C" fn run(wasm_addr: i32, in_size: i32) -> i32 {
     let output = executor.get_output(0).unwrap().as_dltensor(false);
 
     let out_tensor: Tensor = output.into();
-    utils::output_assert(out_tensor, String::from("synset.csv"));
-
-    // let out_size = unsafe { utils::store_output(wasm_addr, out_tensor) };
-    // out_size as i32
+    utils::output_assert(out_tensor, tag_file);
     0
 }

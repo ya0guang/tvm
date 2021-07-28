@@ -28,7 +28,7 @@ use tvm_sys::ffi::{
     DLDataType, DLDataTypeCode_kDLFloat, DLDataTypeCode_kDLInt, DLDevice, DLDeviceType_kDLCPU,
 };
 
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum DataType {
     FP32,
     INT32,
@@ -77,7 +77,7 @@ impl From<DLDataType> for DataType {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct Tensor {
     pub(crate) dtype: DataType,
     pub(crate) shape: Vec<i64>,

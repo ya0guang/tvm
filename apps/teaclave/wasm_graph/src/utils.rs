@@ -20,7 +20,7 @@
 use super::types::*;
 use image::{imageops::FilterType, GenericImageView};
 use ndarray::Array;
-use serde_json;
+// use serde_json;
 use std::fs::File;
 use std::io::BufReader;
 use std::ptr;
@@ -29,34 +29,11 @@ use std::collections::HashMap;
 const IMG_HEIGHT: usize = 224;
 const IMG_WIDTH: usize = 224;
 
-pub unsafe fn load_input(in_addr: i32, in_size: usize) -> Tensor {
-    // let in_addr = in_addr as *mut u8;
+pub fn load_input(in_filename: String) -> Tensor {
 
-    // println!("DEBUG: in_addr {:?}, in_size {:?}", in_addr, in_size);
+    println!("Reading from {}", in_filename);
 
-    // let data_vec = unsafe { std::slice::from_raw_parts(in_addr, in_size) };
-
-    // let input = serde_json::from_slice(&data_vec);
-
-    // match input {
-    //     Ok(result) => {
-    //         println!("DEBUG: SER SUCCEED!!! and Ok");
-    //         result
-    //     }
-    //     Err(e) => {
-    //         panic!("DEBUG: SER SUCCEED!!! but Err, {:?}", &e);
-    //     }
-    // }
-
-    // DEBUG: read dir
-
-    // let dir = std::fs::read_dir("./").unwrap();
-    // println!("DEBUG dir: {:?}", dir);
-
-    let input_filename = "cat.png";
-    println!("Reading from {}", input_filename);
-
-    let f = File::open(input_filename).unwrap();
+    let f = File::open(in_filename).unwrap();
     let reader = BufReader::new(f);
     let img = image::load(reader, image::ImageFormat::PNG).unwrap();
     println!("load image succeed");
@@ -127,14 +104,14 @@ fn data_preprocess(img: image::DynamicImage) -> Tensor {
     Tensor::from(arr)
 }
 
-pub unsafe fn store_output(out_addr: i32, output: Tensor) -> usize {
-    let out_addr = out_addr as *mut u8;
+// pub unsafe fn store_output(out_addr: i32, output: Tensor) -> usize {
+//     let out_addr = out_addr as *mut u8;
 
-    let data_vec = serde_json::to_vec(&output).unwrap();
-    let data_size = data_vec.len();
-    for i in 0..data_size {
-        ptr::write(out_addr.offset(i as isize), *data_vec.get(i).unwrap());
-    }
+//     let data_vec = serde_json::to_vec(&output).unwrap();
+//     let data_size = data_vec.len();
+//     for i in 0..data_size {
+//         ptr::write(out_addr.offset(i as isize), *data_vec.get(i).unwrap());
+//     }
 
-    data_size
-}
+//     data_size
+// }
