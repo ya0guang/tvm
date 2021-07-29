@@ -104,3 +104,15 @@ pub extern "C" fn run() -> i32 {
     utils::output_assert(out_tensor, tag_file);
     0
 }
+
+
+// fn main(){
+//     // unsafe {
+//     //     __wasm_call_ctors();
+//     // }
+
+
+//     let rv = run();
+//     println!("DEBUG: RV: {:?}", rv);
+
+// }
