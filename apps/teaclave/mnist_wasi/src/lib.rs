@@ -30,48 +30,35 @@ pub mod utils;
 // pub use utils;
 
 use std::{collections::HashMap, convert::TryFrom, env, sync::Mutex};
+
 use tvm_graph_rt::{Graph, GraphExecutor, SystemLibModule, Tensor as TVMTensor};
+
 use types::Tensor;
+
 use std::fs::File;
-use std::ffi::CStr;
-use std::os::raw::{c_int, c_char};
 
 #[no_mangle]
-pub extern "C" fn entrypoint(argc: c_int, argv: *const *const c_char) -> i32 {
-    assert_eq!(argc, 2);
+pub fn entrypoint() {
+    unsafe {
+        __wasm_call_ctors();
+    }
 
-    // convert `argv` to `Vec<str>`
-    let argv: Vec<_> = (0..argc)
-        .map(|i| unsafe { CStr::from_ptr(*argv.add(i as usize)).to_string_lossy() })
-        .collect();
-
-    // Arguments are referenced in ODD indices
-    run(
-        argv[1].as_ref(),
-    )
+    let rv = run();
+    println!("DEBUG: RV: {:?}", rv);
 }
-// #[no_mangle]
-// pub fn entrypoint() {
-//     unsafe {
-//         __wasm_call_ctors();
-//     }
 
-//     let rv = run();
-//     println!("DEBUG: RV: {:?}", rv);
-// }
-
-// extern "C" {
-//     pub fn __wasm_call_ctors();
-// }
+extern "C" {
+    pub fn __wasm_call_ctors();
+}
 
 lazy_static! {
     static ref SYSLIB: SystemLibModule = SystemLibModule::default();
     static ref GRAPH_EXECUTOR: Mutex<GraphExecutor<'static, 'static>> = {
-        // unsafe {
-        //     // This is necessary to invoke TVMBackendRegisterSystemLibSymbol
-        //     // API calls.
-        //     __wasm_call_ctors();
-        // }
+        unsafe {
+            // This is necessary to invoke TVMBackendRegisterSystemLibSymbol
+            // API calls.
+            __wasm_call_ctors();
+        }
         let graph = Graph::try_from(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/outlib/graph.json"
@@ -95,11 +82,11 @@ lazy_static! {
 }
 
 #[no_mangle]
-pub extern "C" fn run(input_file: &str) -> i32 {
-    // let input_filename = String::from("data/img_10.jpg");
-    // let tag_file = String::from("synset.csv");
+pub extern "C" fn run() -> i32 {
+    let input_filename = String::from("data/img_10.jpg");
+    let tag_file = String::from("synset.csv");
 
-    let in_tensor = utils::load_input(input_file);
+    let in_tensor = utils::load_input(input_filename);
     let input: TVMTensor = in_tensor.as_dltensor().into();
 
     // since this executor is not multi-threaded, we can acquire lock once
@@ -114,5 +101,5 @@ pub extern "C" fn run(input_file: &str) -> i32 {
     let output = executor.get_output(0).unwrap().as_dltensor(false);
 
     let out_tensor: Tensor = output.into();
-    utils::handle_output(out_tensor)
+    utils::handle_output(out_tensor, tag_file)
 }

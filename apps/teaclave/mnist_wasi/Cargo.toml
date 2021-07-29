@@ -29,7 +29,6 @@ opt-level = 's'
 crate-type = ['cdylib']
 
 [dependencies]
-teaclave_context = { path = "./teaclave_context"}
 # image = "0.23"
 image = "0.20"
 # ndarray = "0.15"

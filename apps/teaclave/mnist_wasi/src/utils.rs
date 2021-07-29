@@ -25,27 +25,26 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufReader, Read};
 use std::ptr;
-use teaclave_context::*;
 
 const IMG_HEIGHT: usize = 28;
 const IMG_WIDTH: usize = 28;
 
-pub fn load_input(in_filename: &str) -> Tensor {
-    // println!("Reading from {}", in_filename);
-    let img_file = TeaclaveContextFile::open_input(in_filename).unwrap();
+pub fn load_input(in_filename: String) -> Tensor {
+    println!("Reading from {}", in_filename);
 
-    // println!("Reading from {}", in_filename);
+    let f = File::open(in_filename).unwrap();
+    let mut reader = BufReader::new(f);
 
-    let mut reader = BufReader::new(img_file);
     let mut buf = vec![];
+
     reader.read_to_end(&mut buf);
 
     let img = image::load_from_memory(&buf).unwrap();
-    // println!("load image succeed");
+    println!("load image succeed");
     data_preprocess(img)
 }
 
-pub fn handle_output(out_tensor: Tensor,) -> i32 {
+pub fn handle_output(out_tensor: Tensor, label_class_file: String) -> i32 {
     let out_vec = out_tensor.to_vec::<f32>();
     println!("{:?}", out_vec);
 
@@ -56,16 +55,16 @@ pub fn handle_output(out_tensor: Tensor,) -> i32 {
         }
     }
 
-    // println!("The number is {}", max_idx);
+    println!("The number is {}", max_idx);
 
     max_idx as _
 }
 
 fn data_preprocess(img: image::DynamicImage) -> Tensor {
-    // println!("original image dimensions: {:?}", img.dimensions());
+    println!("original image dimensions: {:?}", img.dimensions());
     let img = img.resize_exact(IMG_HEIGHT as u32, IMG_WIDTH as u32, FilterType::Nearest).grayscale();
 
-    // println!("resized image dimensions: {:?}", img.dimensions());
+    println!("resized image dimensions: {:?}", img.dimensions());
     // println!("DEBUG: img: {:?}", img);
     let mut pixels = img.raw_pixels();
     println!("DEBUG: raw pixels {:?}", pixels);
