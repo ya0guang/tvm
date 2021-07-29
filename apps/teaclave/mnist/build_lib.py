@@ -58,7 +58,7 @@ def build_graph_lib(opt_level):
 
     # img_url = "https://s3.amazonaws.com/model-server/inputs/kitten.jpg"
     # img_path = download_testdata(img_url, "imagenet_cat.png", module="data")
-    img_path = "./test/img_10.jpg"
+    img_path = "./data/img_10.jpg"
 
     # Resize it to 224x224
     resized_image = Image.open(img_path).resize((28, 28))
@@ -81,26 +81,26 @@ def build_graph_lib(opt_level):
 
     mod, params = relay.frontend.from_onnx(onnx_model, shape_dict)
     # print(mod.get_source())
-    target = "llvm"
-    # target = "llvm -mtriple=wasm32-unknown-unknown --system-lib"
+    # target = "llvm"
+    target = "llvm -mtriple=wasm32-unknown-unknown --system-lib"
 
     with tvm.transform.PassContext(opt_level=opt_level):
         factory = relay.build(mod, target=target, params=params)
 
 
 
-    dev = tvm.device(str(target), 0)
-    print(factory)
-    print(dev)
-    module = graph_executor.GraphModule(factory["default"](dev))
+    # dev = tvm.device(str(target), 0)
+    # print(factory)
+    # print(dev)
+    # module = graph_executor.GraphModule(factory["default"](dev))
 
-    module.set_input(input_name, img_data)
-    module.run()
+    # module.set_input(input_name, img_data)
+    # module.run()
 
-    output_shape = (1, 10)
-    tvm_output = module.get_output(0, tvm.nd.empty(output_shape)).numpy()
+    # output_shape = (1, 10)
+    # tvm_output = module.get_output(0, tvm.nd.empty(output_shape)).numpy()
 
-    print(tvm_output)
+    # print(tvm_output)
 
     # Save the model artifacts to obj_file
     obj_file = os.path.join(out_dir, "graph.o")

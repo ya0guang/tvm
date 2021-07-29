@@ -15,7 +15,7 @@ from tvm.contrib import graph_executor
 lib_path = "./outlib/graph.o.so"
 param_path = "./outlib/graph.params"
 json_path = "./outlib/graph.json"
-img_path = "./test/img_10.jpg"
+img_path = "./data/img_10.jpg"
 
 loaded_lib = tvm.runtime.load_module(lib_path)
 print(loaded_lib)
