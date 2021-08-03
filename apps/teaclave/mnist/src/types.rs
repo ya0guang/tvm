@@ -206,5 +206,5 @@ macro_rules! impl_tensor_from_ndarray {
 }
 
 impl_tensor_from_ndarray!(f32, DataType::FP32);
-impl_tensor_from_ndarray!(i32, DataType::INT32);
-impl_tensor_from_ndarray!(i8, DataType::INT8);
+// impl_tensor_from_ndarray!(i32, DataType::INT32);
+// impl_tensor_from_ndarray!(i8, DataType::INT8);

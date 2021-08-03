@@ -20,7 +20,6 @@
 use super::types::*;
 use image::{imageops::FilterType, GenericImageView};
 use ndarray::Array;
-// use serde_json;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufReader, Read};
@@ -47,7 +46,7 @@ pub fn load_input(in_filename: &str) -> Tensor {
 
 pub fn handle_output(out_tensor: Tensor,) -> i32 {
     let out_vec = out_tensor.to_vec::<f32>();
-    println!("{:?}", out_vec);
+    // println!("{:?}", out_vec);
 
     let mut max_idx = 0;
     for i in 0..out_vec.len() {
@@ -68,7 +67,7 @@ fn data_preprocess(img: image::DynamicImage) -> Tensor {
     // println!("resized image dimensions: {:?}", img.dimensions());
     // println!("DEBUG: img: {:?}", img);
     let mut pixels = img.raw_pixels();
-    println!("DEBUG: raw pixels {:?}", pixels);
+    // println!("DEBUG: raw pixels {:?}", pixels);
 
     let mut averaged = vec![];
     for p in pixels {

@@ -32,7 +32,6 @@ pub mod utils;
 use std::{collections::HashMap, convert::TryFrom, env, sync::Mutex};
 use tvm_graph_rt::{Graph, GraphExecutor, SystemLibModule, Tensor as TVMTensor};
 use types::Tensor;
-use std::fs::File;
 use std::ffi::CStr;
 use std::os::raw::{c_int, c_char};
 
@@ -50,19 +49,6 @@ pub extern "C" fn entrypoint(argc: c_int, argv: *const *const c_char) -> i32 {
         argv[1].as_ref(),
     )
 }
-// #[no_mangle]
-// pub fn entrypoint() {
-//     unsafe {
-//         __wasm_call_ctors();
-//     }
-
-//     let rv = run();
-//     println!("DEBUG: RV: {:?}", rv);
-// }
-
-// extern "C" {
-//     pub fn __wasm_call_ctors();
-// }
 
 lazy_static! {
     static ref SYSLIB: SystemLibModule = SystemLibModule::default();
